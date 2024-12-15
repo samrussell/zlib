@@ -531,7 +531,7 @@ int ZEXPORT deflateResetKeep (strm)
         INIT_STATE;
     strm->adler =
 #ifdef GZIP
-        s->wrap == 2 ? crc32(0L, Z_NULL, 0) :
+        s->wrap == 2 ? crc32_slicing(0L, Z_NULL, 0) :
 #endif
         adler32(0L, Z_NULL, 0);
     s->last_flush = -2;
@@ -796,7 +796,7 @@ local void flush_pending(strm)
 #define HCRC_UPDATE(beg) \
     do { \
         if (s->gzhead->hcrc && s->pending > (beg)) \
-            strm->adler = crc32(strm->adler, s->pending_buf + (beg), \
+            strm->adler = crc32_slicing(strm->adler, s->pending_buf + (beg), \
                                 s->pending - (beg)); \
     } while (0)
 
@@ -891,7 +891,7 @@ int ZEXPORT deflate (strm, flush)
 #ifdef GZIP
     if (s->status == GZIP_STATE) {
         /* gzip header */
-        strm->adler = crc32(0L, Z_NULL, 0);
+        strm->adler = crc32_slicing(0L, Z_NULL, 0);
         put_byte(s, 31);
         put_byte(s, 139);
         put_byte(s, 8);
@@ -934,7 +934,7 @@ int ZEXPORT deflate (strm, flush)
                 put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
             }
             if (s->gzhead->hcrc)
-                strm->adler = crc32(strm->adler, s->pending_buf,
+                strm->adler = crc32_slicing(strm->adler, s->pending_buf,
                                     s->pending);
             s->gzindex = 0;
             s->status = EXTRA_STATE;
@@ -1021,7 +1021,7 @@ int ZEXPORT deflate (strm, flush)
             }
             put_byte(s, (Byte)(strm->adler & 0xff));
             put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
-            strm->adler = crc32(0L, Z_NULL, 0);
+            strm->adler = crc32_slicing(0L, Z_NULL, 0);
         }
         s->status = BUSY_STATE;
 
@@ -1219,7 +1219,7 @@ local unsigned read_buf(strm, buf, size)
     }
 #ifdef GZIP
     else if (strm->state->wrap == 2) {
-        strm->adler = crc32(strm->adler, buf, len);
+        strm->adler = crc32_slicing(strm->adler, buf, len);
     }
 #endif
     strm->next_in  += len;

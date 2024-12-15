@@ -15,7 +15,7 @@
   Note on the use of DYNAMIC_CRC_TABLE: there is no mutex or semaphore
   protection on the static variables used to control the first-use generation
   of the crc tables.  Therefore, if you #define DYNAMIC_CRC_TABLE, you should
-  first call get_crc_table() to initialize the tables before allowing more than
+  first call get_crc_table_slicing() to initialize the tables before allowing more than
   one thread to use crc32().
 
   DYNAMIC_CRC_TABLE and MAKECRCH can be #defined to write out crc32.h. A main()
@@ -37,7 +37,7 @@
 #  define BYFOUR
 #endif
 #ifdef BYFOUR
-   local unsigned long crc32_little OF((unsigned long,
+   local unsigned long crc32_little_slicing OF((unsigned long,
                         const unsigned char FAR *, z_size_t));
    local unsigned long crc32_big OF((unsigned long,
                         const unsigned char FAR *, z_size_t));
@@ -160,7 +160,7 @@ local void make_crc_table()
         }
 #endif /* BYFOUR */
 
-        /* generate zero operators table for crc32_combine() */
+        /* generate zero operators table for crc32_combine_slicing() */
 
         /* generate the operator to apply a single zero bit to a CRC -- the
            first row adds the polynomial if the low bit is a 1, and the
@@ -255,7 +255,7 @@ int main()
 #else /* !DYNAMIC_CRC_TABLE */
 /* ========================================================================
  * Tables of CRC-32s of all single-byte values, made by make_crc_table(),
- * and tables of zero operator matrices for crc32_combine().
+ * and tables of zero operator matrices for crc32_combine_slicing().
  */
 #include "crc32.h"
 #endif /* DYNAMIC_CRC_TABLE */
@@ -263,7 +263,7 @@ int main()
 /* =========================================================================
  * This function can be used by asm versions of crc32()
  */
-const z_crc_t FAR * ZEXPORT get_crc_table()
+const z_crc_t FAR * ZEXPORT get_crc_table_slicing()
 {
 #ifdef DYNAMIC_CRC_TABLE
     if (crc_table_empty)
@@ -277,7 +277,7 @@ const z_crc_t FAR * ZEXPORT get_crc_table()
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
 /* ========================================================================= */
-unsigned long ZEXPORT crc32_z(crc, buf, len)
+unsigned long ZEXPORT crc32_z_slicing(crc, buf, len)
     unsigned long crc;
     const unsigned char FAR *buf;
     z_size_t len;
@@ -295,7 +295,7 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 
         endian = 1;
         if (*((unsigned char *)(&endian)))
-            return crc32_little(crc, buf, len);
+            return crc32_little_slicing(crc, buf, len);
         else
             return crc32_big(crc, buf, len);
     }
@@ -312,12 +312,12 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 }
 
 /* ========================================================================= */
-unsigned long ZEXPORT crc32(crc, buf, len)
+unsigned long ZEXPORT crc32_slicing(crc, buf, len)
     unsigned long crc;
     const unsigned char FAR *buf;
     uInt len;
 {
-    return crc32_z(crc, buf, len);
+    return crc32_z_slicing(crc, buf, len);
 }
 
 #ifdef BYFOUR
@@ -341,7 +341,7 @@ unsigned long ZEXPORT crc32(crc, buf, len)
 #define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
 
 /* ========================================================================= */
-local unsigned long crc32_little(crc, buf, len)
+local unsigned long crc32_little_slicing(crc, buf, len)
     unsigned long crc;
     const unsigned char FAR *buf;
     z_size_t len;
@@ -438,7 +438,7 @@ local uLong crc32_combine_(crc1, crc2, len2)
 }
 
 /* ========================================================================= */
-uLong ZEXPORT crc32_combine(crc1, crc2, len2)
+uLong ZEXPORT crc32_combine_slicing(crc1, crc2, len2)
     uLong crc1;
     uLong crc2;
     z_off_t len2;
@@ -446,7 +446,7 @@ uLong ZEXPORT crc32_combine(crc1, crc2, len2)
     return crc32_combine_(crc1, crc2, len2);
 }
 
-uLong ZEXPORT crc32_combine64(crc1, crc2, len2)
+uLong ZEXPORT crc32_combine64_slicing(crc1, crc2, len2)
     uLong crc1;
     uLong crc2;
     z_off64_t len2;
@@ -505,14 +505,14 @@ local void crc32_combine_gen_(op, len2)
 }
 
 /* ========================================================================= */
-void ZEXPORT crc32_combine_gen(op, len2)
+void ZEXPORT crc32_combine_gen_slicing(op, len2)
     z_crc_t *op;
     z_off_t len2;
 {
     crc32_combine_gen_(op, len2);
 }
 
-void ZEXPORT crc32_combine_gen64(op, len2)
+void ZEXPORT crc32_combine_gen64_slicing(op, len2)
     z_crc_t *op;
     z_off64_t len2;
 {
@@ -520,7 +520,7 @@ void ZEXPORT crc32_combine_gen64(op, len2)
 }
 
 /* ========================================================================= */
-uLong crc32_combine_op(crc1, crc2, op)
+uLong crc32_combine_op_slicing(crc1, crc2, op)
     uLong crc1;
     uLong crc2;
     const z_crc_t *op;
